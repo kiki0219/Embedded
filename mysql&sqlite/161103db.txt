@@ -1,0 +1,1491 @@
+数据库
+数据库是一个软件,专用来存储操作数据
+嵌入式学习数据库:
+a.mysql
+b.sqlite
+数据库学习:
+1.SQL语句
+2.API linux   c 接口函数
+数据库基础知识
+关系性数据库(ORDB)
+数据库逻辑对象(数据库database 表 视图 索引 触发器 存储过程 函数)
+数据物理文件(数据文件  日志文件  操作文件)
+
+mysql数据库
+mysq是一种开源 基于服务/客户端(c/s) 网络数据库
+mysql数据库是基于tcp协议通信的数据库
+启动服务端程序
+[root@localhost ~]# service  mysqld start
+[root@localhost ~]# service  mysqld stop
+[root@localhost ~]# service  mysqld restart
+
+客户端程序运行
+[root@localhost ~]# mysql       //默认以没有设置密码root用户连接本地服务端
+[root@localhost ~]# mysql -hlocalhost -uroot -p
+-h:指定服务器(主机名称 或 IP 地址)
+-u:指定连接的用户名
+-p:需要输入用户名的密码
+mysql 监听端口号默认的是3306
+
+root用户mysql一个管理员账号,没有设置密码
+
+mysql客户端常用命令:
+mysql> show databases;   //查看数据库服务器中存在的数据库
+//mysql系统数据库,存放用户  用户权限 管理数据库软件数据存放.
+mysql> create database lkd1103db;//创建数据库
+//   /var/lib/mysql/lkd1103db  //与数据库同名的目录
+同一个服务器数据库名称唯一
+mysql> create database if not exists  lkd1103db;
+
+mysql> use lkd1103db;//使用数据库
+
+表 table:是数据库中最小的逻辑单元,存放数据结构,由字数据行和字段组成
+mysql> create table car(cno varchar(10),cname varchar(20));
+car:表名
+cno varchar(10);字段=名称 + 数据类型
+表可以含有多个字段
+一个数据库中表名唯一
+
+mysql> create table if not exists car(cno varchar(10),cname varchar(20));
+
+表中插入数据
+mysql> insert into car values('0001','car1');
+mysql> insert into car values('0002','car2');
+
+查询数据
+mysql> select   *  from  car;
+
+
+mysql> show tables;//显示数据库中表名
+
+mysql> describe tablename; //查看表结构
+
+
+
+字段数据类型
+a.字符类型
+b.数字类型
+c.日期时间类型
+d.大字段类型
+e.枚举类型
+字符类型:
+char:默认表示一个字符   name char|name char(1)
+     name char(n) n为一个整数,表示字段,实际存储长度,不够用空格填充,超过部分丢掉
+     name char(10)  name 值:'abcd','sdfdsf'   存储时都会添加空格
+varchar:可变字符,定义时必须指定长度值
+     name  varchar(1) 必须指定长度1
+     name  varchar(n)  n表示最大存储长度空间,非实际存储长度
+     name varchar(10)  name 值:'abcd'  按照值得实际长度存储
+                               'sdfdsf'
+text:文本,varchar集合
+
+数字类型:
+int:整数
+integer:整数
+float:浮点数
+decimal(m,n)精度数字表示
+m:数字个数(整数位数+小数的位数)
+n:小数位数
+score  decimal(5,2)  //表示3个整数 两个小数位
+score  decimal(5,0)  //表示整数
+
+日期时间
+date:日期
+datetime:日期时间
+注意日期时间格式占位字符(%y  %Y  %d  %D.....)
+
+大字段
+以二进制存储大文件(声音  视频 图片文件)
+blob
+
+枚举
+enum(值1,值2) 限制字段的值
+sex enum('fmale','male')
+
+数据库表设计范式
+第一范式:要求表是一个行列形式,由数据行和字段列组成
+create table car(cno varchar(10),cname varchar(20));
+第二范式:满足第一范式,设置主键字段,取消数据行的歧义和重复,保证数据唯一 正确性
+主键:修饰字段,确定字段的值唯一性
+mysql> create table student (sid varchar(10) primary key,sname varchar(20),sex enum('fmale','male'));
+
+
+mysql> alter table car add primary key(cno);
+
+mysql> describe car;//查看表结构
+
+一个表只能有一个主键,一个主键可以有多个字段
+mysql> create table A(id varchar(10),item varchar(3),name varchar(10));
+mysql> alter table A  add primary key(id,item);
+mysql> insert into A values('1','1','a1');
+mysql> insert into A values('1','2','a1');
+mysql> insert into A values('1','1','a1');//错误
+
+主键字段字段不能为空
+
+第三范式:满足第二范式,设置外键字段,实现表之间关联
+表的原子性设计:一个表中不设计含有多个表信息
+外键:与其它表关联的字段,外键必定是另一个表主键
+mysql> create table class (cid varchar(10) primary key,cname varchar(10));
+mysql> create table  student2(sid varchar(10) primary key,sname varchar(10),
+cid varchar(10),foreign  key(cid)  references    class(cid));
+
+mysql> create table student3 (sid varchar(10),sname varchar(10),cid varchar(10));
+mysql> alter table student3 add primary key(sid);
+mysql> alter table student3 add  foreign key(cid) references class(cid);
+
+mysql> describe student3;
+一个表可以存在多个外键
+主外键约束:
+字段为主键:基础信息表
+字段为外键:业务逻辑表
+先新增基础信息表,再到业务逻辑表引用
+先删除业务逻辑表,再删除基础信息表
+
+在实际开发中:心中有外键
+
+表修改:
+新增表字段
+mysql> alter table A  add (addr varchar(10));
+修改表字段名称
+mysql> alter table A change addr  addr2 varchar(10);
+
+修改表字段数据类型
+mysql> alter table A modify addr2 int;
+
+修改表名
+mysql> alter table A rename to AA;
+
+删除表字段
+mysql> alter table AA drop column  addr2;
+
+删除表
+mysql> drop table AA;
+mysql> drop table  if exists AAA;
+
+
+删除数据库
+mysql> drop database lkd1103db;
+mysql> drop database  if exists lkd1103db;
+
+SQL语言 数据库通用语言
+SQL  struct  query   language  结构化查询语言
+SQL语言分类:
+a.DDL 数据定义语言  data define  language  
+支持语句:create drop  alter truncate
+b.数据操作语言 DML  支持语句:select insert  update delete
+c.数据控制语言DCL  data control language  支持语句:revoke grant
+d.事务语言 TCL   transaction control language  支持语句:begin transaction   
+  rollback  commit
+  
+字段约束
+1.primary  key:唯一  不为空
+2.foreign  key:值必须引用另一个表
+3.null|not null:字段值可以为null或必须有值
+4.default: 默认值
+5.unique:唯一
+6.check:检测
+
+设计表时没可以选择性地使用 
+mysql> create table student(sid varchar(10) primary key,
+sname varchar(10) not null,age int check(age>=8 and age<=30),
+sex enum('fmale','male') default 'male',mobile varchar(5) unique);
+插入数据:
+mysql> insert into student values('s0001','student1',12,'fmale','12345');
+mysql> insert into student values('s0002','',12,'fmale','12345');
+mysql> insert into student values('s0002','',12,'fmale','12346');
+mysql> insert into student values('s0003',null,12,'fmale','12348');
+mysql> insert into student(sid,age,sex,mobile) 
+       values('s0003',12,'fmale','12349');
+mysql> insert into student values('s0004','student4',12,default,'12367');
+mysql> insert into student(sid,sname,age,mobile) values('s0006','student34',15,'12398');
+
+作业:
+1.熟悉以上所有语句,下次课默写(错误一句抄10遍)
+2.继续完成项目
+
+
+DML语言 数据操作语言
+insert
+select
+delete
+update
+
+select查询语句
+select 查询语法:
+select   查询显示的字段名
+from   表名
+[where   条件]  
+
+mysql> select * from student;//"*"查询输出表的所有字段的值
+mysql> select sname,age from student;
+
+查询输出字段别名
+mysql> select sname s1,sage s2 from student;
+mysql> select sname as s1,sage as  s2 from student;
+
+查询表的别名
+mysql> select student.sname,student.sage  from student
+mysql> select s.sname,s.sage  from student s
+
+条件
+where  条件1  (and|or)   条件2  (and|or)  条件3  ....
+条件1组成:条件字段名   比较符号  值
+mysql> select  *    from  sc  where score<60;
+        A              B           C
+语句解析顺序:B  C   A
+
+mysql> select  *  from sc where cid='003'  and  score<60;
+mysql> select  *  from sc where cid='003'  or  score<60;
+mysql> select  *   from student where sage >22 and ssex=0;
+mysql> select * from student where sage>=34 or sage<=40 and ssex=0;
+mysql> select * from student where (sage>=34 or sage<=40) and ssex=0;
+
+条件比较符号:= <> >  >=  <  <=
+mysql> select * from student where sage <>29;
+mysql> select * from student where sage !=29;
+mysql> select * from student where sage >=23 and sage <=30;
+mysql> select * from student where sname >'sss';
+mysql> select * from student where sname >'szs';
+
+is null | is not null
+mysql> select * from student where  sid is not null;
+mysql> select * from student where  sid is null;
+
+in | not in  集合判断
+mysql> select * from student  where sid  in (select sid from sc);
+首先执行:select sid from sc 
+
+mysql> select * from student where sid in ('s001','s002','s003');
+
+mysql> select * from student  where sid  in (select *  from sc);//错误,值集合中每行显示的两个字段
+mysql> select * from student  where sid  not  in (select sid  from sc);
+
+exists| not  exists 存在或不存
+mysql> select * from student where exists(select * from sc where student.sid=sc.sid);
+mysql> select * from student where  not exists(select * from sc where student.sid=sc.sid);
+关联查询,效率高于非关联查询
+
+order by  排序
+排序方式:
+升序  asc
+降序  desc
+mysql> select *  from sc  order by score;  //默认为升序
+mysql> select *  from sc  order by score asc;
+mysql> select *  from sc  order by score desc;
+mysql> select *  from sc  order by score desc,sid asc;
+
+mysql> select * from sc where score>=60 order by score desc;
+
+mysql> select * from sc order by score desc where score>=100;//错误,排序出现在单查询语句最后
+
+mysql> select *  from  (select * from sc where score>=60)s1 order by score; 
+//嵌套查询
+
+分组
+分组依据:必定存在一个或多个具有相同值得字段,该字段称为分组字段
+分组与聚合函数关系:
+group by
+
+mysql> select *  from sc  group by cid;  //分组,但是没有是I用聚合函数,分组无任何含义
+
+聚合函数:将多个值合成一个值,一般代表组的含义
+sum  求和
+avg  平均
+max  最大值
+min  最小值
+count 记录数
+
+mysql> select cid, sum(score),avg(score),max(score),min(score),count(*) from sc group by cid;//cid称为分组字段,集合聚合函数
+
+mysql> select cid,sid, sum(score),avg(score),max(score),min(score),count(*) from sc group by cid;//没有任何含义
+
+
+mysql> select cid,sid, sum(score),avg(score),max(score),min(score),count(*) from sc group by cid,sid;//sid唯一值,每个学生被分为一组
+
+mysql> select ssex,avg(sage),count(*) from student group by ssex;
+
+分组条件筛选:
+group by 
+having    //只能用于分组之后条件筛选
+
+mysql> select ssex,avg(sage),count(*) from student group by ssex having avg(sage)>26;
+
+mysql> select ssex,avg(sage) s1,count(*) from student group by ssex having s1>26;
+
+mysql> select * from (select ssex,avg(sage) s1,count(*) from student group by ssex) s1  where s1>26;
+
+count :统计记录数
+mysql> select count(*) from sc;
+mysql> select count(2) from sc;
+mysql> select count(score) from sc;//如果是一个字段,将无法统计该字段为空数据行
+
+显示输出结果处理
+distinct  去重复记录
+mysql> select distinct sid from sc;
+
+mysql> select distinct sid,cid from sc;/distinct 后面的字段值一样
+
+union   | union all  合并查询结果
+mysql> select * from sc union select sid,sname,sage from student;
+
+mysql> select * from sc union select * from sc;//重复的记录只会显示一次
+
+mysql> select * from sc union all  select * from sc;//重复重复记录显示多次
+
+
+like 模糊查找
+通配字符 "%"
+mysql> select * from student where sname like 's%'; //以s开头
+mysql> select * from student where sname like '%2'; //以2结尾
+mysql> select * from student where sname like '%1%'; //含有1字符
+
+limit n,m   
+n:从第几笔开始 ,值一般从0开始
+m:取行数
+
+mysql> select *  from student limit 3,2;
+
+多表关联查询
+1.全连接(内连接)
+2.左连接
+3.右连接
+
+语法:
+a.select   *    from  a,b where  a.id=b.id
+mysql> select *   from student,sc  where student.sid=sc.sid;//多个表查询,必须有关联语句
+
+mysql> select student.sid,sname,cid,score   from student,sc  where student.sid=sc.sid;
+
+mysql> select sname,cname,score 
+       from student,sc,course 
+       where   student.sid=sc.sid 
+               and sc.cid=course.cid;
+
+
+b.mysql> select student.sid,sname,cid,score from student inner join sc on student.sid=sc.sid;//查询输出的结果必须是关联的表都有相同关联字段的值
+
+mysql>  select sname,cname,score 
+        from student 
+             inner join sc on student.sid=sc.sid  
+             inner join course on sc.cid=course.cid;
+
+左连接:
+mysql> select student.sid,sname,cid,score from student left  join sc on student.sid=sc.sid;
+首先查询left 左边的表数据,然后再依据关联字段到left右边表查询数据,如果没有则输出NULL
+
+mysql> select student.sid,sname,cid,score from student right  join sc on student.sid=sc.sid;
+首先查询right 右边的表数据,然后再依据关联字段到right 左边表查询数据,如果没有则输出NULL
+
+mysql> select student.sid,sname,cid,score from sc right  join student on student.sid=sc.sid;//左右连接相对
+
+一般用inner join
+
+case when   then  else end  查询输出字段条件判断
+mysql> select  sid,sname,sage,ssex,case when ssex=1 then 'male' else 'fmale' end sex from student;
+
+mysql> select sid,cid,score,case when score>=90 and score<=100 then 'A'   when score>=80 and score<=89  then 'B' when score>=70 and score<=79 then 'C'  when score>=60 and score<=69 then 'D'  else 'E' end grade from sc;
+
+假如存在如下数据
+sid  sname  obj  score
+s001 张三   语文  98
+s001 张三   数学  92
+s001 张三   英语  62
+s002 李四   语文  78
+s002 李四   数学  69
+s002 李四   英语  83
+
+请写一sql语句,输出结果如下:
+sid   sname  语文  数学  英语
+s001 张三    98     92    62
+s002 李四    78     69    83
+
+mysql> create table score (sid varchar(10) primary key,sname varchar(10) not null,obj varchar(10),score int);
+mysql> insert into score values('s001','zhangsan','chinese',89),('s001','zhangsan','math',92),('s003','zhangsan','english',62),('s002','lisi','chinese',78),('s002','lisi','math','69'),('s002','lisi','english',83);
+
+mysql> select sid,sname,max(case when obj='chinese' then score else 0 end) chinese,sum(case when obj='math' then score else 0 end) math,max(case when obj='english' then score else 0 end) english from score group by sid,sname;
+
+
+between  and  区间
+mysql> select * from  student where sage  between 22 and 26;
+
+子查询
+a.from  后面 是一个查询语句
+b.条件中 in  (值集合 是一个查询语句)
+c.出现查询输出部分
+含有子查询语句,首先执行子查询
+假如存在如下数
+pid  pname price
+001   A    1000
+003   B    1500
+002   C    800
+005   D    1200
+006   E    900
+写sql语句实现如下输出:
+pid  pname price
+001   A    1000
+003   B    3300
+002   C    1800
+005   D    4500
+006   E    5400
+
+mysql> create table A(pid varchar(10) primary key,pname varchar(10),price int);
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> insert into A values('001','A',1000),('003','B','1500'),('002','C','800'),('005','D',1200),('006','E',900);
+
+mysql> select pid,pname,(select sum(price) from A where pid<=q.pid) price  from A q;
+
+
+插入语句 insert
+语法:
+insert into 表名  values(值)   //一次只能插入一笔数据  注意:表名后没有指定字段名,默认给表的所有字段插入值(values中值个数必须与表的字段数一样)
+insert  into 表名(字段名)  values(值)//给指定的字段插入新值
+insert into 表名  values(值),(值),....//一次性插入多行数据
+insert into 表名  select  *  from 表//查询输出的字段数量 数据类型与被插入表的字段数量 数据类型一致
+mysql> insert into score(sid,score) select sid,score   from sc;
+
+mysql> create table sc2 select * from sc;//复制表结构 和 数据
+
+mysql> create table sc3  select * from sc where 1=2; //复制表结构
+
+修改 update
+语法:
+update  表名  set   字段名1=新值,字段名2=新值,字段名3=新值
+[where  条件]
+mysql> update sc2 set score=100; //全表修改
+mysql> update sc2 set cid='abc' where sid='s005';//有条件修改
+表的所有字段都可以修改,但是一般不修改主键字段的值,一般用来作为修改的条件
+
+删除数据  delete
+语法
+delete  from  表名  [ where  条件]
+mysql> delete from sc2; //删除表的所有数据
+从表的第一笔数据一行一行的删除,效率较低
+mysql> delete from sc2 where sid='s005';//有条件删除
+
+mysql> truncate sc2;  //删除表数据,是按照说块删除,效率高于delete
+
+事务(transaction)
+
+mysql C/S数据库,所有客户端进程提交数据或查询数据都是来自于同一个服务端的物理文件(多个进程同时操作或访问一个公共资源文件)
+mysql 提供了锁和事务机制 保证数据操作安全性 正确性
+
+事务:是数据库锁实现机制,确保对数据库操作(修改) 具有原子性  一致性  隔离性 持久性
+原子性:一次只能有一个客户修改数据,不可被中断
+一致性:数据对所有客户访问都是一个值
+隔离性:每个事物独立 互相不影响
+持久性:事务不会自动结束
+
+事务使用步骤:
+1.开启一个事务(相当于加锁)
+2.执行sql语句
+3.结束一个事务(相当于解锁)
+
+开启事务:begin| begin transaction
+结束事务:rollback(撤销修改 结束事务)    commit(修改生效 结束事务)
+
+
+mysql> begin;
+mysql> insert into sc2 select * from sc;
+mysql> select * from sc2;
+mysql> rollback;/commit
+mysql> select * from sc2;
+
+mysql 数据引擎()
+mysql> show engines;
+MyISAM     | YES     | Default engine as of MySQL 3.23 with great performance         |
+
+InnoDB     | DEFAULT | Supports transactions, row-level locking, and foreign keys  
+
+改变数据引擎:
+1.[root@localhost etc]# vim my.cnf
+2.default-storage-engine=InnoDB
+3.service mysqld restart 重启服务
+[mysqld]
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+user=mysql
+# Default to using old password format for compatibility with mysql 3.x
+# clients (those using the mysqlclient10 compatibility package).
+old_passwords=1
+default-storage-engine=InnoDB
+
+[mysqld_safe]
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
+
+
+保存点(savepoint)
+设置回滚记录值
+mysql> begin;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> savepoint p1;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> delete from sc2 where sid='s002';
+Query OK, 3 rows affected (0.00 sec)
+
+mysql> savepoint p2;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> delete from sc2 where sid='s004';
+Query OK, 3 rows affected (0.00 sec)
+
+mysql> rollback to p2;  //保存点只能是回滚    撤销p2之后修改
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> commit;  //提交未回滚    让p2之前修改有效
+Query OK, 0 rows affected (0.02 sec)
+
+视图(view)
+视图存储在服务端一个对象,由查询语句组成,表示一个虚表(视图查询语句执行结果)
+
+视图优点:
+1.保存查询语句,共享查询语句
+2.简化语句
+3.隐藏表的信息
+
+创建视图语法:
+create view  view_name 
+as
+select * from tablename//只能是查询语句
+
+mysql> create view sc_view1  as select * from sc;
+mysql> select * from sc_view1;
+
+
+mysql> create  view sc_view2 as select  student.*,sc.cid,sc.score from student inner join sc on student.sid=sc.sid ;
+
+mysql> select * from sc_view2;
+
+
+mysql> create  view sc_view3 as select  *  from student inner join sc on student.sid=sc.sid ;//错误,视图相当于虚表,必须满足表的字段唯一
+
+视图本身无存储数据空间,查询时所有的数据来自于查询的表(基表)
+
+视图修改基表数据
+1.视图虚表结构与基表结构一样,可以修改
+2.视图查询语句存在:distinct group by  聚合函数  having union union all 都是不能通过视图修改基表数据
+
+索引(index)
+索引是数据一个对象,查找数据时,提供一种最优查询(提供一个查询索引字段)
+索引优点:
+1.提高查询效率
+
+索引实现原理:
+key(priamry  unique):逻辑值
+数据库最终存储在磁盘物理文件:物理地址值
+当逻辑值与物理地址值一致(值顺序关系)
+索引好似用RBTREE/BTREE实现的
+聚簇索引/非聚簇索引
+聚簇索引:逻辑key与物理地址顺序一致,一个表值能有一个聚簇索引
+索引分为:
+a.主键索引(表设置主键,自动创建主键索引)
+b.唯一索引:字段值唯一
+c.组合索引:多个字段
+d.函数索引:函数修饰字段
+c.bitmap位图索引
+创建索引语法:
+create index  [primary | unique | bitmap] index_name on table(field,field,fun(field))
+当执行查询语句时,自动选择一个最优索引(一个表可以存在多个索引)
+
+数据库安全操作命令
+1.用户安全(创建新用户  设置用户密码 设置用户权限)
+mysql权限管控:
+1.表级权限
+2.字段列权限
+3.过程(函数,存储过程)权限
+4.数据库权限
+
+创建新用户并设置密码
+mysql> describe user;
+ysql> select host,user,password  from user;
+
+create  user 
+mysql> create user muser1;
+mysql> create user muser1@localhost;
+mysql> create user muser2@localhost identified by '123456';
+[root@localhost winshare]# mysql -h localhost -u muser2 -p
+
+mysql> insert into user(host,user,password) values('localhost','muser4','123456'); // 错误  password 存储的是加密后密文
+
+mysql> insert into user(host,user,password) values('localhost','muser5',password('123456'));//必须用到密码函数password
+mysql> flush privileges;//刷新
+[root@localhost winshare]# mysql -h localhost -u muser5 -p
+
+修改root用户密码
+mysql> update user set password=password('123456')  where host='localhost' and user='root';
+mysql> flush privileges;
+
+删除用户
+mysql> drop user muser1;
+mysql> drop user muser1@localhost;
+
+
+mysql> delete from user where host='localhost' and user='user3';
+mysql> flush privileges;
+
+用户
+mysql> grant create on  *.*  to  muser2@localhost;
+create:权限值   all 表示最大的所有权限
+*.* :服务器上所有数据库 和数据库的所有对象
+muser2@localhost:授权的用户
+
+回收权限
+mysql> revoke create on *.*  from muser2@localhost;
+
+以sql语句脚本数据库备份
+[root@localhost winshare]# mysqldump -h localhost -u root -p lkd1103db >ldk1103db.sql
+
+[root@localhost winshare]# mysql -h localhost -u root -p lkd1103db < ldk1103db.sql 
+
+mysql  PL/SQL
+逻辑+变量+数据类型=语句块
+mysql 语句块对象:
+1.存储过程(procedure)
+2.函数(function)
+
+存储过程
+存储在服务端具有一定功能的语句块,客户通过存储过程的名称调用
+存储优点:
+1.提高数据操作安全性
+2.共享共用语句块
+3.减少网络流量
+
+存储创建语法:
+create procedure    procedure_name([参数列表])
+begin
+    //语句1  ;
+    //语句2  ;
+end
+
+改变终端结束字符
+mysql> delimiter $$
+
+mysql> create  procedure lkd1103db_pro1()
+    -> begin
+    ->    select * from sc;
+    -> end$$
+调用存储过程:
+mysql> call lkd1103db_pro1()$$
+
+
+定义变量
+declare 变量名  数据类型 [default  值];
+常用数据类型类型:
+varchar(n)  char  text  int integer decimal(m,n)  datetime
+变量赋值:
+1.默认值
+2.set  变量名=值
+3.select 显示字段  into 变量名
+
+
+mysql> drop procedure lkd1103db_pro2$$
+
+create  procedure lkd1103db_pro2()
+begin
+   declare vdata integer;
+   declare vname varchar(10);
+   declare vage int default 20;
+
+   set  vdata=3000;
+   set  vname='myname';
+
+   select vdata,vname,vage;
+end
+
+
+mysql> call lkd1103db_pro2()$$
+
+
+create  procedure lkd1103db_pro3()
+begin
+   declare vname varchar(10);
+   declare vage int;
+
+   select sname,sage  
+   into vname,vage
+   from student
+   where sid='s001';
+
+   select vname,vage;
+end
+
+注意:
+1.变量一次只能接收一个值,查询时必须带有条件,只能输出一行数据
+2.变量个数与数据类型必须查询输出字段个数 类型一致
+
+
+create  procedure lkd1103db_pro4(vsid varchar(10))
+begin
+   declare vname varchar(10);
+   declare vage int;
+
+   select sname,sage  
+   into vname,vage
+   from student
+   where sid=vsid;
+
+   select vname,vage;
+end
+
+mysql> call lkd1103db_pro4('s002')$$
+
+语句结构:
+1.顺序
+2.选择
+3.循环
+
+选择:
+1.if  条件  then   
+     //执行语句
+  else  
+     //执行语句
+  end if
+  
+ 条件:> <  >= <= = != <>  is null  is not null
+
+create  procedure lkd1103db_pro5(vsid varchar(10),vcid varchar(10))
+begin
+   declare vscore int;
+
+   select score  
+   into vscore
+   from sc
+   where sid=vsid
+        and cid=vcid;
+
+   if vscore>=60 then
+       select 'pass';
+   else
+       select 'no pass';
+   end if;
+end
+
+mysql> call lkd1103db_pro5('s001','001')$$
+
+
+create  procedure lkd1103db_pro6(vsid varchar(10),vcid varchar(10))
+begin
+   declare vscore int;
+
+   select score  
+   into vscore
+   from sc
+   where sid=vsid
+        and cid=vcid;
+
+   if vscore>=60 then
+       select 'pass';
+   elseif vscore>=80 then 
+       select 'A';
+   else
+       select 'no pass';
+   end if;
+end
+
+case
+  when   then ;
+  when   then ;
+  when   then ;
+  else    ;
+end case;
+
+create  procedure lkd1103db_pro7(vsid varchar(10),vcid varchar(10))
+begin
+   declare vscore int;
+
+   select score  
+   into vscore
+   from sc
+   where sid=vsid
+        and cid=vcid;
+   case vscore
+     when  87 then select 'A';
+     when 80  then select 'B';
+     else    select 'C';
+   end case;   
+end
+
+mysql> call lkd1103db_pro7('s001','001')$$
+
+
+create  procedure lkd1103db_pro8(vsid varchar(10),vcid varchar(10))
+begin
+   declare vscore int;
+
+   select score  
+   into vscore
+   from sc
+   where sid=vsid
+        and cid=vcid;
+   case 
+     when  vscore>=90 and vscore<=100   then select 'A';
+     when  vscore>=80 and vscore<89  then select 'B';
+     when  vscore>=70 and vscore<79  then select 'C';
+     when  vscore>=60 and vscore<69  then select 'D';
+     else    select 'E';
+   end case;   
+end
+mysql> call lkd1103db_pro8('s001','001')$$
+
+循环
+1.loop
+2.while
+3.repeat until
+
+loop 语法:
+tag:loop
+    //循环体语句
+    if   then
+       leave tag;
+    end 
+end loop 
+
+create  procedure lkd1103db_pro9()
+begin
+   declare i int default 1;
+   declare vsum int default 0;
+   tag:loop
+      set vsum=vsum+i;
+      set i=i+1;
+      if i=101 then
+         leave tag;
+      end if;
+   end loop;
+
+   select vsum;
+end
+
+while语法
+while  条件
+do
+  //循环体
+end while
+
+create  procedure lkd1103db_pro10()
+begin
+   declare i int default 1;
+   declare vsum int default 0;
+   while i<=100
+   do
+      set vsum=vsum+i;
+      set i=i+1;
+   end while;
+
+   select vsum;
+end
+
+repeat  until语法:
+
+repeat
+do
+    循环体语句
+untile 条件   //当条件满足时退出循环
+end repeat
+
+
+create  procedure lkd1103db_pro11()
+begin
+   declare i int default 1;
+   declare vsum int default 0;
+   repeat
+       set vsum=vsum+i;
+       set i=i+1;
+      until i=101
+   end repeat;
+   select vsum;
+end
+
+游标(cursor)
+游标记录查询返回结果地址(缓存),类似于指针或数组,但不支持下标,只能每次从游标值一行一行提取
+定义游标:
+declare  游标名   cursor  for  查询语句;
+操作游标操作:
+1.打开游标  open  游标名
+2.循环
+3.提取游标 fetch  游标名  into  变量
+4.数据使用
+5.结束循环(当游标数据提取结束)
+6.关闭游标  close  游标名
+
+判断游标数据已经提取结束
+mysql通过提取数据抛出异常错误,在程序中捕捉异常而改变程序中定义标记变量值
+declare vflag int defualt 1;
+declare continue handler for not found set vflag=值; 
+
+create  procedure lkd1103db_pro13()
+begin
+   declare vflag int default 1;
+   declare vname varchar(10);
+   declare vage int; 
+   declare my_cursor cursor for select  sname,sage from student;
+    
+   declare continue handler for not found set vflag=0;
+   open my_cursor;
+   tag:loop
+        fetch my_cursor into vname,vage;
+        if  vflag=0 then
+          leave tag;
+        end if;
+        select vname,vage;       
+   end loop;
+   close my_cursor;
+end
+
+create  procedure lkd1103db_pro14()
+begin
+   declare vflag int default 1;
+   declare vname varchar(10);
+   declare vage int; 
+   declare vsid varchar(10);
+   declare my_cursor cursor for select  sid,sname,sage from student;
+    
+   declare continue handler for not found set vflag=0;
+   open my_cursor;
+   tag:loop
+        fetch my_cursor into vsid,vname,vage;
+        if  vflag=0 then
+          leave tag;
+        end if;
+        if vage<25  then
+           update student set sage=25 where sid=vsid;
+        end if; 
+   end loop;
+   close my_cursor;
+end
+
+//作业:
+//1.用 while  操作游标
+//2.写一个存储过程,修改sc表考试成绩(成绩<60 成绩改成60) 
+
+create  procedure lkd1103db_pro15()
+begin
+   declare vflag int default 1;
+   declare vsid varchar(10);
+   declare vcid varchar(10); 
+   declare vscore int;
+   declare my_cursor cursor for select  * from sc;
+    
+   declare continue handler for not found set vflag=0;
+   open my_cursor;
+   fetch my_cursor into vsid,vcid,vscore;
+   while  vflag=1
+   do
+      select vsid,vcid,vscore;
+      if vscore<60 then
+          update sc set score=60 where sid=vsid and cid=vcid;
+      end if;
+      fetch my_cursor into vsid,vcid,vscore;     
+   end while;
+   close my_cursor;
+end
+
+存储过程参数模式
+a.in  输入模式 默认为此模式
+b.out  输出模式
+c.inout 输入输出模式
+
+//定义临时变量
+mysql> set @vcid='001'$$
+mysql> call lkd1103db_pro16(@vcid)$$
+
+
+create  procedure lkd1103db_pro17(vsid varchar(10),out vsname varchar(10))
+begin
+   select sname into vsname from student where sid=vsid;
+end
+mysql> set @vsname=''$$
+mysql> call lkd1103db_pro17('s001',@vsname)$$
+
+
+create  procedure lkd1103db_pro18(vsid varchar(10))
+begin
+   declare vsname varchar(10);
+   call lkd1103db_pro17(vsid,vsname);
+   select vsname;
+end
+
+//输入输出参数应用
+create  procedure lkd1103db_pro19(inout vsid varchar(10))
+begin
+   select sname into vsid from student where sid=vsid;
+end
+
+查看数据库中已经创建的存储过程
+mysql> show  procedure status$$
+查看指定存储过程语句
+mysql> show   create  procedure lkd1103db_pro15$$
+
+
+函数(function)
+定义 功能与存储过程完全一样,必须有返回值.
+函数定义语法:
+create function  function _name([参数])
+returns  返回值类型
+begin
+   return 返回值;
+end
+
+
+create function  lkd1103db_fun1()
+returns int
+begin
+  declare vsage int;
+  select sage into vsage from student where sid='s001';
+  return vsage;
+end
+//在函数中不能直接使用select查询语句
+mysql> select lkd1103db_fun1()$$  //调用语句
+
+
+create function  lkd1103db_fun2(vsid varchar(10))
+returns int
+begin
+  declare vsage int;
+  select sage into vsage from student where sid=vsid;
+  return vsage;
+end
+
+函数没有out 参数模式
+
+数据库系统函数:
+数字
+mysql> select floor(23.456)$$
+mysql> select ceil(23.567)$$
+mysql> select round(23.4567,2)$$
+mysql> select round(23.4567)$$
+mysql> select round(23.4567,-2)$$
+mysql> select round(53.4567,-2)$$
+mysql> select truncate(23.4567,2)$$
+mysql> select truncate(63.4567,-2)$$
+
+字符
+mysql> select char(98)$$
+mysql> select ascii('b')$$
+mysql> select lpad('abcd',10,'*')$$
+mysql> select rpad('abcd',10,'*')$$
+mysql> select rtrim('123456    ') a$$
+mysql> select ltrim('   123456    ') a$$
+mysql> select trim('   123456    ') a$$
+mysql> select length('acd')$$
+mysql> select instr('abcdecdf','cd')$$
+mysql> select substring('abcdef',2,3)$$
+mysql> select insert('abcd',2,'14123')$$
+mysql> select replace('abcdef','cd','123123123');
+mysql> select upper('abcde')$$
+mysql> select lower('ABCD')$$
+mysql> select locate('c','abcde')$$
+mysql> select char_length('abcd')$$
+//自定义实现replace函数
+create function  my_replace (srcstr varchar(50),deststr varchar(10),newstr  varchar(10))
+returns varchar(50)
+begin
+    declare vindex int;
+    declare len int;
+    declare retstr varchar(100);
+    set vindex=instr(srcstr,deststr);
+    set len=length(deststr);
+    set retstr=srcstr;
+    while vindex>0 
+    do
+        set retstr=insert(retstr,vindex,len,newstr);
+        set vindex=instr(retstr,deststr);
+    end while;
+    return retstr;
+end;
+
+日期时间
+mysql> select now()$$
+mysql> select current_date()$$
+mysql> select current_time()$$
+mysql> select year(now())$$
+mysql> select day(now())$$
+mysql> select month(now())$$
+mysql> select date_format(now(),'%Y-%m-%d %h:%i:%s')$$
+mysql> select date_format(now(),'%Y/%m/%d %h:%i:%s')$$
+
+其它
+mysql> select ifnull(null,'2')$$
+mysql> select ifnull(null,0)$$
+
+msql  c  API
+
+配置开发库:
+1.[root@localhost tmp]# tar -xvzf  mysql-connector-c-6.0.2-linux-glibc2.3-x86-32bit.tar.gz -C /usr/local
+2.[root@localhost tmp]# cd /usr/local
+3.[root@localhost local]# mv mysql-connector-c-6.0.2-linux-glibc2.3-x86-32bit/ mysql
+
+头文件:
+#include <mysql.h>
+
+mysql 常用数据类型
+MYSQL:数据库连接句柄(指针)
+
+mysql_init  获得或初始化一个数据连接句柄
+MYSQL *mysql_init(MYSQL *mysql)
+MYSQL *mysql : ==NULL 分配 初始化
+               !=NULL  再初始化
+返回值:初始化对象
+
+mysql_real_connect  连接数据库服务器
+MYSQL *mysql_real_connect(MYSQL *mysql, const char *host, const char *user, const char *passwd, const char *db, unsigned int port, const char *unix_socket, unsigned long client_flag)
+MYSQL *mysql:数据库句
+const char *host:主机名或IP
+const char *user:用户ID
+const char *passwd:用户密码
+const char *db:数据库名
+unsigned int port:端口值 (一般为0  或3306)
+const char *unix_socket:指定套接字或有名管道
+unsigned long client_flag:客户端特征值设置,一般为0
+
+关闭数据库并释放数据库连接句柄
+mysql_close
+void  mysql_close(MYSQL* handler)
+
+数据库错误消息提示
+mysql_error
+const char *mysql_error(MYSQL *mysql)
+
+#include <mysql.h>
+#include <stdio.h>
+#include <stdlib.h>
+int main(int argc, char const *argv[])
+{
+	MYSQL * handler=NULL;
+	handler=mysql_init(handler);
+	if(handler==NULL)
+	{
+		printf("init mysql handler fail\n");
+		exit(-1);
+	}
+	handler=myql_real_connect(handler,"localhost","root","123456","lkd1103db",0,NULL,0);
+	if(handler==NULL)
+	{
+		printf("connect mysql server fail:%s\n",mysql_error(handler));
+		exit(-1);
+	}
+	printf("connect ok\n");
+	mysql_close(handler);
+	return 0;
+}
+
+编译:
+[root@localhost 1103db]# gcc  -I /usr/local/mysql/include -L /usr/local/mysql/lib -lmysql mysql1.c
+
+执行错误解决:
+connect mysql server fail:Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)
+解决:1.[root@localhost 1103db]# service mysqld restart
+     2.[root@localhost mysql]# ln -s /var/lib/mysql/mysql.sock  /tmp
+
+
+xxx.so  cant not load
+解决:1.[root@localhost 1103db]# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/use/local/mysql/lib
+
+简单编译:
+1.[root@localhost include]# cp  /usr/local/mysql/include/*  /usr/include
+2.[root@localhost lib]# cp  /usr/local/mysql/lib/* /usr/lib
+3.[root@localhost 1103db]# gcc -lmysql  mysql1.c
+
+
+mysql_query 执行sql语句
+int  mysql_query(MYSQL* handler,char * sql)
+
+
+mysql_select_db  选择数据库
+int mysql_select_db(MYSQL *mysql, const char *db)
+
+
+mysql_query执行的是查询语句
+数据库物理文件读取数据 保存到服务端缓存区  再从缓存中提取数据传递到客户端
+
+存储查询数据结果到缓存
+MYSQL_RES *mysql_store_result(MYSQL *mysql)
+
+MYSQL_RES :指向缓存的地址结果集
+
+返回查询结果集数据行数
+unsigned int mysql_num_row(MYSQL_RES *result)
+
+返回查询结果集数据字段数
+unsigned int mysql_num_fields(MYSQL_RES *result)
+
+提取结集数据行
+MYSQL_ROW mysql_fetch_row(MYSQL_RES *result)
+
+MYSQL_ROW:行数据类型
+
+预处理
+将每次执行的语句产生的数据保存一份到缓存,如果后期有相似或相同语句,服务端不再解析执行此sql语句.直接从缓存提取数据
+预处理分为:
+1.输入
+2.输出
+
+输入:
+初始化预处理结构 
+MYSQL_STMT
+
+MYSQL_STMT *mysql_stmt_init(MYSQL *mysql)
+
+关闭预处理
+
+int mysql_stmt_close(MYSQL_STMT *)
+
+构造预处理语句
+int mysql_stmt_prepare(MYSQL_STMT *stmt, const char *stmt_str, unsigned long length)
+const char *stmt_str:预处理语句,是一个非完整sql语句,可能含有参数格式占位字符,"?"
+unsigned long length:预处理语句长度
+
+对不完整预处理语句传入参数
+定义参数     MYSQL_BIND 参数类型
+MYSQL_BIND 结构类型:
+buffer_type:参数数据类型,一般取	MYSQL_TYPE_STRING MYSQL_TYPE_LONG 等
+buffer:传入给缓存值得变量
+buffer_length:如果类型是MYSQL_TYPE_STRING ,必须指定值的长度
+
+绑定参数值
+my_bool mysql_stmt_bind_param(MYSQL_STMT *stmt, MYSQL_BIND *bind)
+执行语句
+int mysql_stmt_execute(MYSQL_STMT *stmt)
+
+
+输出:
+初始化预处理结构 
+MYSQL_STMT
+
+MYSQL_STMT *mysql_stmt_init(MYSQL *mysql)
+
+关闭预处理
+
+int mysql_stmt_close(MYSQL_STMT *)
+
+构造预处理语句
+int mysql_stmt_prepare(MYSQL_STMT *stmt, const char *stmt_str, unsigned long length)
+const char *stmt_str:预处理语句,是一个非完整sql语查询句,可能含有参数格式占位字符,"?"
+unsigned long length:预处理语句长度
+
+对不完整预处理语句传入参数
+定义参数     MYSQL_BIND 参数类型
+MYSQL_BIND 结构类型:
+buffer_type:参数数据类型,一般取	MYSQL_TYPE_STRING MYSQL_TYPE_LONG 等
+buffer:传入给缓存值得变量
+buffer_length:如果类型是MYSQL_TYPE_STRING ,必须指定值的长度
+
+绑定输出结果集
+my_bool mysql_stmt_bind_result(MYSQL_STMT *stmt, MYSQL_BIND *bind)
+执行语句
+int mysql_stmt_execute(MYSQL_STMT *stmt)
+
+提取数据行
+int mysql_stmt_fetch(MYSQL_STMT *stmt)
+
+sqlite
+sqlite主要特点:
+1.开源 免费
+2.跨平台 ,支持手机 或 电脑操作系统
+3.用作嵌入式数据引擎
+4.本地文件存储,可以用SQL访问操作
+5.是轻量级数据库,文件不大,但是可以存储2G的数据量
+
+安装盘配置sqlite
+1.[root@localhost tmp]# tar -xvzf sqlite-3.3.7.tar.gz -C /usr/local
+2.[root@localhost local]# mv sqlite-3.3.7/ sqlite
+3.[root@localhost sqlite]# ./configure  --prefix=/usr/local/sqlite
+4.[root@localhost sqlite]# make
+5.[root@localhost sqlite]# make install
+
+[root@localhost tmp]# sqlite3
+
+sqlite3终端支持两种命令:
+1. sqlite3  软件操作命令
+2. 数据库操作命令
+
+[root@localhost 1103db]# sqlite3  sqlitedb1
+
+sqlite> .database
+sqlite> .schema  student
+sqlite> insert into student values('s001','student1');
+sqlite> insert into student values('s002','student2');
+sqlite> select * from student;
+sqlite> .mode  insert
+
+sqlite> create table person(pid varchar(10) primary key,pname varchar(10),score int  check(score>=0 and score<=100));
+
+sqlite> create table class (cid,cname);
+sqlite> select typeof(cid),typeof(cname) from class;
+
+sqlite> .seperator ,
+sqlite> .import student.dat  student
+
+sqlite> .header on
+sqlite> select * from student;
+
+数据库对象转化成sql文件
+[root@localhost 1103db]# sqlite3  sqlitedb1 '.dump'  >  sqlitedb1.sql
+[root@localhost 1103db]# sqlite3  sqlitedb2  <  sqlitedb1.sql
+
+
+sqlite> select strftime('%Y/%m/%d','2016-06-02');
+sqlite> select strftime('%Y-%m-%d','now');
+
+sqlite  API
+加载头文件
+#include <sqlite3.h>
+
+数据类型:
+sqlite3    数据库句柄实例
+typedef struct sqlite3 sqlite3;
+
+打开数据库文件
+sqlite3_open
+int sqlite3_open(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb          /* OUT: SQLite db handle */
+);
+
+关闭
+sqlite3_close
+int sqlite3_close(sqlite3* ppDb);
+
+以上两个函数返回均是状态:
+SQLITE_OK  =0  成功
+其它都是失败 如:
+SQLITE_ABORT   =4
+SQLITE_BUSY    =5
+返回错误消息
+sqlite3_errmsg
+const char *sqlite3_errmsg(sqlite3*);
+
+#include <sqlite3.h>
+#include <stdio.h>
+#include <stdlib.h>
+int main(int argc, char const *argv[])
+{
+	sqlite3 * ppDb;
+	int ret=sqlite3_open("sqlitedb1",&ppDb);
+	if(ret!=SQLITE_OK)
+	{
+		printf(sqlite3_errmsg(ppDb));
+		exit(-1);
+	}
+	sqlite3_close(ppDb);
+	return 0;
+}
+
+编译:
+
+sqlite3_exec  执行sql
+int sqlite3_exec(
+  sqlite3*,                                  /* An open database */
+  const char *sql,                           /* SQL to be evaluated */
+  int (*callback)(void*,int,char**,char**),  /* Callback function */
+  void *,                                    /* 1st argument to callback */
+  char **errmsg                              /* Error msg written here */
+);
+
+如果执行的sql语句时输入性语句(insert  update delete )
+int (*callback)(void*,int,char**,char**),  /* Callback function */
+void * arg,  /* 1st argument to callback */
+
+callback=NULL
+arg=NULL;
+
+
+如果执行的sql语句时输出性语句(select )
+int (*callback)(void* arg,int,char**,char**),  /* Callback function */
+void * arg,  /* 1st argument to callback */
+callback 指定一个负责输出函数(回调函数)
+void * arg 从当前调用的函数传值给输出函数参数
+
+
+int (*callback)(void* arg,int col,char** fieldvalue,char** fieldname)
+void* arg:回调函数中接收参数值
+int col:字段数
+char** fieldname:字段名
+char** fieldvalue:字段值
+
+回调函数:是一个函数指针,作为另一个函数的参数,用来异步执行返回结果
+
+将物理文件数据查询到缓存中
+sqlite_get_table
+int sqlite3_get_table(
+  sqlite3 *db,          /* An open database */
+  const char *zSql,     /* SQL to be evaluated */
+  char ***pazResult,    /* Results of the query */
+  int *pnRow,           /* Number of result rows written here */
+  int *pnColumn,        /* Number of result columns written here */
+  char **pzErrmsg       /* Error msg written here */
+);
+释放缓存
+void sqlite3_free_table(char **result);
+
+缺点:数据量越大消耗内存越多,效率越低
+
+预处理:
+预处理 数据对象:
+typedef struct sqlite3_stmt sqlite3_stmt;
+预处理过程:
+1.Create the prepared statement object using sqlite3_prepare_v2().
+2.Bind values to parameters using the sqlite3_bind_*() interfaces.
+3.Run the SQL by calling sqlite3_step() one or more times.
+4.Reset the prepared statement using sqlite3_reset() then go back to step    2. Do this zero or more times.
+5.Destroy the object using sqlite3_finalize().
+
+int sqlite3_prepare(
+  sqlite3 *db,            /* Database handle */
+  const char *zSql,       /* SQL statement, UTF-8 encoded */
+  int nByte,              /* Maximum length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
+预处理的参数赋值
+sqlite3_bind_blob
+sqlite3_bind_blob64
+sqlite3_bind_double
+sqlite3_bind_int
+sqlite3_bind_int64
+sqlite3_bind_null
+sqlite3_bind_parameter_count
+sqlite3_bind_parameter_index
+sqlite3_bind_parameter_name
+sqlite3_bind_text
+sqlite3_bind_text16
+sqlite3_bind_text64
+sqlite3_bind_value
+sqlite3_bind_zeroblob
+sqlite3_bind_zeroblob64
+
+int sqlite3_bind_text(sqlite3_stmt*,int  index,const char*  value,int len,void(*)(void*));
+int  index:参数项次,从1开始
+const char*:参数值
+int len:值长度,strlen函数返回
+void(*)(void*):回调函数输出错误,一般为NULL
+
+int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+int sqlite3_bind_int(sqlite3_stmt*, int index  , int  value);
+sqlite3_step  执行sql语句
+
+查询语句
+循环调用sqlite3_step,通过返回值判断数据是否取完,SLQITE_ROW :获取下一行数据
+sqlite3_step 
+int  sqlite3_step(sqlite3_stmt *st)
+
+获取每行数据结果用如下函数:
+const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
+int sqlite3_column_bytes(sqlite3_stmt*, int iCol);
+int sqlite3_column_bytes16(sqlite3_stmt*, int iCol);
+double sqlite3_column_double(sqlite3_stmt*, int iCol);
+int sqlite3_column_int(sqlite3_stmt*, int iCol);
+sqlite3_int64 sqlite3_column_int64(sqlite3_stmt*, int iCol);
+const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
+const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
+int sqlite3_column_type(sqlite3_stmt*, int iCol);
+sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
+
+int iCol:查询最左边的字段,从 0开始,返回值为字段查询值
+返回二进制字段的字节数
+int sqlite3_column_bytes(sqlite3_stmt*, int iCol);
+返回二进制字段的值
+const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);

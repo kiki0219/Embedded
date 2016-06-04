@@ -1,0 +1,206 @@
+Student(S#,Sname,Sage,Ssex) 学生表
+Course(C#,Cname,T#) 课程表
+SC(S#,C#,score) 成绩表
+Teacher(T#,Tname) 教师表
+create table student
+(
+   sid varchar(10),
+   sname varchar(10),
+   sage int, 
+   ssex varchar(2) //1:男性 0:女性
+)
+INSERT INTO `student` VALUES ('s001','student1',23,'1'),('s002','student2',26,'0'),('s004','student4',24,'1'),('s005','student5',25,'1'),('s006','student6',26,'0'),('s008','student8',28,'0'),('s009','student9',29,'0'),('s011','student11',21,'1'),('s012','student12',22,'1'),('s014','student14',24,'0');
+create table course
+(
+   cid varchar(10),
+   cname varchar(10),
+   tid  varchar(10)
+)
+INSERT INTO `course` VALUES ('001','c1','t01'),('002','c2','t02'),('003','c3','t03'),('004','c4','t02'),('005','c5','t01');
+create table sc
+(
+   sid varchar(10),
+   cid varchar(10),
+   score int
+)
+INSERT INTO `sc` VALUES ('s001','001',87),('s001','002',77),('s001','005',67),('s002','002',66),('s002','003',87),('s002','004',57),('s004','003',57),('s004','005',97),('s004','002',87),('s005','002',47),('s005','001',67),('s006','004',67),('s006','002',77),('s006','003',67),('s008','001',67),('s008','004',77),('s009','002',87),('s009','004',67),('s009','005',47),('s011','001',67),('s011','003',77),('s011','005',92),('s012','003',91),('s012','002',83),('s012','004',76),('s014','003',72),('s014','005',82);
+create table teacher
+(
+   tid  varchar(10),
+   tname varchar(10)
+)
+INSERT INTO `teacher` VALUES ('t01','teacher1'),('t02','teacher2'),('t03','teacher3');
+
+问题：
+1.查询"001"课程比"002"课程成绩高的所有学生的学号 
+select a.sid from (select sid,score from sc where cid='001') a inner join (select sid,score from sc where cid='002')b on a.sid=b.sid where a.score>b.score;
+
+2、查询平均成绩大于60分的同学的学号和平均成绩；
+select sid,avg(score) from sc group by sid having avg(score)>60;
+
+3、查询所有同学的学号、姓名、选课数、总成绩；
+select s.sid,s.sname,count(*),sum(score) from student s inner join sc on s.sid=sc.sid group by s.sid,s.sname;
+
+4、查询姓"李"的老师的个数；
+select count(*) from teacher where tname like '李%';
+
+5、查询没学过"叶平"老师课的同学的学号、姓名；
+select distinct s.sid,s.sname from student s inner join sc on s.sid=sc.sid where sc.sid not in(select student.sid from course c                inner join  teacher t on c.tid=t.tid        inner join  sc      on       c.cid=sc.cid       inner join student  on       sc.sid=student.sid       where tname='teacher2');
+
+
+6、查询学过"001"并且也学过编号"002"课程的同学的学号、姓名；  
+select s.sid,s.sname from student s inner join sc on s.sid=sc.sid where sc.cid='001' and   s.sid in (select sid from sc where cid='002');
+
+select s.sid,s.sname from student s inner join sc on s.sid=sc.sid where sc.cid='001' and   exists (select *  from sc s2  where cid='002' and s2.sid=sc.sid);
+
+7、查询学过"叶平"老师所教的所有课的同学的学号、姓名；
+select s.sid,count(*) n2 ,a.n1 from sc s inner join(
+select  cid,(select count(*) from course where tid=(select tid from teacher  where   tname='teacher1'  ) ) n1 from course c inner join teacher t on c.tid=t.tid where t.tname='teacher1') a  on  s.cid=a.cid
+group by s.sid
+having n2=a.n1
+
+8、查询课程编号"002"的成绩比课程编号"001"课程低的所有同学的学号、姓名； 
+select student.sid,student.sname from student  inner join (select a.sid from (select sid,score from sc where cid='001') a inner join (select sid,score from sc where cid='002')b on a.sid=b.sid where a.score>b.score) a on student.sid=a.sid;
+
+9、查询所有课程成绩小于60分的同学的学号、姓名；
+select s.sid,s.sname
+from student s inner join
+(select sid,max(score)
+from sc
+group by sid
+having max(score)<60) a
+on s.sid=a.sid
+
+10、查询没有学全所有课的同学的学号、姓名； 
+ select s.sid,s.sname from student s inner join (select sid,count(*) n1  from sc group by sid)a on s.sid=a.sid where a.n1<(select count(*) from course); 
+
+
+11、查询至少有一门课与学号为"1001"的同学所学相同的同学的学号和姓名；   
+select s.sid,s.sname from student s inner join sc on s.sid=sc.sid where sc.cid in (select distinct cid from sc where sid='s014')
+
+12、查询至少学过学号为"001"同学所有一门课的其他同学学号和姓名； 
+select s.sid,s.sname from student s inner join sc on s.sid=sc.sid where sc.cid in (select distinct cid from sc where sid='s014')
+
+14、查询和"1002"号的同学学习的课程完全相同的其他同学学号和姓名； 
+select sid
+from(
+select a.sid,n1,n2,(select count(*)  from sc where sid='s005') n3
+from (select sid,count(*) n1
+from sc
+where cid in(select cid from sc where sid='s005')
+group by sid) a
+inner join
+(select sid,count(*) n2 
+from sc 
+group by sid ) b
+on a.sid=b.sid)c
+where n1=n3
+      and n2=n3
+      and sid!='s005'
+
+15、删除学习"叶平"老师课的SC表记录； 
+delete from sc where cid=(select distinct sc.cid from sc inner join course c on sc.cid=c.cid inner join teacher t on c.tid=t.tid where tname='teacher1')
+
+16、向SC表中插入一些记录，这些记录要求符合以下条件：没有上过编号"002"课程的同学学号、002
+    号课的平均成绩；   
+insert into sc select sid,'002',(select cid, avg(score) from sc group by cid having cid='002') from sc where sid not in(select distinct sid from sc where cid= '002');
+
+17、按平均成绩从高到低显示所有学生的"数据库"、"企业管理"、"英语"三门的课程成绩，按如下形式显示：学生ID,数据库,企业管理,英语,有效课程数,有效平均分 
+select sid,ifnull((select score from sc where sc.sid=s.sid and sc.cid='001'),0)s1,ifnull((select ifnull(score,0) from sc where sc.sid=s.sid and sc.cid='002'),0)s2,ifnull((select ifnull(score,0) from sc where sc.sid=s.sid and sc.cid='003'),0)s3,count(*)c1,avg(score)s4 from sc s group by s.sid order by avg(score);
+
+18、查询各科成绩最高和最低的分：以如下形式显示：课程ID，最高分，最低分  
+select c.cname,a.maxscore,a.minscore from (select cid, max(score) maxscore,min(score) minscore  from sc group by cid)a inner join course c on a.cid=c.cid;
+
+19、按各科平均成绩从低到高和及格率的百分数从高到低顺序 
+   select t.cid,c.cname,ifnull(avg(score),0),100*sum(case  when ifnull(score,0)>=60 then 1 else 0 end)/count(*) pp     from sc t inner join course c on t.cid=c.cid     group by t.cid     order by pp desc;
+20、查询如下课程平均成绩和及格率的百分数(用"1行"显示): 企业管理（001），马克思（002），OO&UML （003），数据库（004）  
+   select a.cid,pscore,(case when a.cid='001' then p1
+                            when a.cid='002' then p2
+			    when a.cid='003' then p3
+			    when a.cid='004' then p4
+			    when a.cid='005' then p5 else 0 end) pp
+  from(
+  select cid, avg(score) pscore from sc group by cid) a inner join 
+  (select cid,sum(case when cid='001' and score>=60 then 1 else 0 end)/sum(case when cid='001' then 1 else 0 end) p1,
+ sum(case when cid='002' and score>=60 then 1 else 0 end)/sum(case when cid='002' then 1 else 0 end) p2,
+ sum(case when cid='003' and score>=60 then 1 else 0 end)/sum(case when cid='003' then 1 else 0 end) p3,
+ sum(case when cid='004' and score>=60 then 1 else 0 end)/sum(case when cid='004' then 1 else 0 end) p4,
+ sum(case when cid='005' and score>=60 then 1 else 0 end)/sum(case when cid='005' then 1 else 0 end) p5
+ from sc group by cid) b on a.cid=b.cid
+
+
+   
+21、查询不同老师所教不同课程平均分从高到低显示 
+    select t.tid,t.tname,c.cname,avg(score)   from sc inner join course c on sc.cid=c.cid   inner join teacher t on c.tid=t.tid   group by c.cid   order by avg(score) desc;
+
+23、统计列印各科成绩,各分数段人数:课程ID,课程名称,[100-85],[85-70],[70-60],[ <60] 
+select sc.cid,cname,
+sum(case when score between 85 and 100 then 1 else 0 end)c1,
+sum(case when score between 70 and 85 then 1 else 0 end)c2,
+sum(case when score between 65 and 70 then 1 else 0 end)c3,
+sum(case when score<60 then 1 else 0 end)c4
+from sc inner join course on sc.cid=course.cid
+group by sc.cid,cname
+
+24、查询学生平均成绩及其名次 
+    select 1+(select count(distinct score) 
+    from (select sid,avg(score) score from sc
+           group by sid
+          )a where score>b.score
+             )num,sid,score
+    from (select sid,avg(score) score from sc group by sid)b
+    order by score desc;   
+
+26、查询每门课程被选修的学生数  
+    select cid,count(*) from sc group by cid;
+27、查询出只选修了二门课程的全部学生的学号和姓名 
+    select sc.sid,sname from sc inner join student on sc.sid=student.sid where sc.sid in (select sid from sc group by sid having count(*)=2)
+28、查询男生、女生人数   
+    select ssex,count(*) from student group by ssex
+29、查询姓"张"的学生名单   
+    select * from student where sname like '张%'
+30、查询同名同性学生名单，并统计同名人数  
+     select ssex,sname,count(*) from student group by ssex,sname having count(*)>1;
+31、1981年出生的学生名单(sage 为varchar 类型)
+    select * from student where year(sage)='1981';
+32、查询每门课程的平均成绩，结果按平均成绩升序排列，平均成绩相同时，按课程号降序排列  
+     select avg(score) from sc  group by cid order by avg(score) asc,cid desc;
+33、查询平均成绩大于80的所有学生的学号、姓名和平均成绩 
+     select distinct sc.sid,sname,a.score from sc inner join (select sid, avg(score)score from sc group by sid)a on sc.sid=a.sid inner join student on sc.sid=student.sid where a.score>=80;
+
+34、查询课程名称为"数据库"，且分数低于60的学生姓名和分数      select sname,score from sc inner join student on sc.sid=student.sid where cid=(select cid from course where cname='c2') and score<60
+35、查询所有学生的选课情况；
+    select sname,cname from sc inner join student on     sc.sid=student.sid inner join course on         
+    course.cid=sc.cid
+//36、查询任何一门课程成绩都在70分以上的姓名、课程名称和分数；  select sname,cname,score from sc inner join student on     sc.sid=student.sid inner join course on         
+    course.cid=sc.cid where sc.score>70;    
+//37、查询不及格的课程，并按课程号从大到小排列  
+    select cid from sc where score <60 order by cid desc
+38、查询课程编号为003且课程成绩在80分以上的学生的学号和姓名；    
+    select sc.sid,sname from sc inner join student on sc.sid=student.sid where sc.cid='003' and sc.score>80
+//39、求选了课程的学生人数 
+    select count(*) from sc 
+40、查询选修"叶平"老师所授课程的学生中，成绩最高的学生姓名及其成绩    
+    select sname,score from student s inner join sc c on s.sid=c.sid inner join  course u on c.cid=u.cid inner join teacher t on u.tid=t.tid where t.tname='teacher1' and c.score=(select max(score) from sc where cid=c.cid)
+41、查询各个课程及相应的选修人数  
+    select count(*) from sc group by cid;
+42、查询不同课程成绩相同的学生的学号、课程号、学生成绩  
+    select distinct a.sid,a.cid,b.score from sc a inner join sc b on  a.score=b.score  where  a.cid<>b.cid;
+
+44、统计每门课程的学生选修人数（超过10人的课程才统计）。要求输出课程号和选修人数，查询结果按人数降序排列，查询结果按人数降序排列，若人数相同，按课程号升序排列 
+    select cid,count(*) from sc group by cid order by count(*) desc ,cid;
+45、检索至少选修两门课程的学生学号  
+   select sid from sc group by sid having count(*)>2;
+
+46、查询全部学生都选修的课程的课程号和课程名  
+     select cid,cname from course where cid in (select cid from sc group by cid);
+//47、查询没学过"叶平"老师讲授的任一门课程的学生姓名  
+     select s.sname from student s inner join sc on s.sid=sc.sid where sc.cid not in(select cid from course c inner join  teacher t on c.tid=t.tid where tname='teacher2');
+48、查询两门以上不及格课程的同学的学号及其平均成绩 
+    select sid,avg(ifnull(score,0))score from sc where sid in(select sid from sc where score<60 group by sid having count(*)>2) group by sid
+49、检索"004"课程分数小于60，按分数降序排列的同学学号
+ select * from sc where cid='003' and score <60 order by score desc;
+50、删除"002"同学的"001"课程的成绩
+     delete from sc where sid='s002' and cid='001'
+
+ 
